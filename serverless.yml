@@ -1,0 +1,187 @@
+service: qldb-wallet-demo
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  memorySize: 512
+  stage: ${opt:stage, 'dev'}
+  region: ap-southeast-1
+  lambdaHashingVersion: "20201221"
+  tracing:
+    apiGateway: true
+    lambda: true # Optional, can be true (true equals 'Active'), 'Active' or 'PassThrough'
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED	: "1"
+    LEDGER_NAME: qldb-wallet-demo-${self:provider.stage}
+    LOG_LEVEL: WARN
+    POWERTOOLS_METRICS_NAMESPACE: ${self:service}
+    POWERTOOLS_LOGGER_SAMPLE_RATE: 0.2
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - 'qldb:SendCommand'
+          Resource:
+            - !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}"
+        - Effect: Allow
+          Action:
+            - 'qldb:PartiQLInsert'
+            - 'qldb:PartiQLUpdate'
+            - 'qldb:PartiQLDelete'
+            - 'qldb:PartiQLSelect'
+            - 'qldb:PartiQLHistoryFunction'
+          Resource:
+            - !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+        - Effect: "Allow"
+          Action:
+            - "xray:PutTraceSegments"
+            - "xray:PutTelemetryRecords"
+          Resource: "*" # Restrict resource to minimum required
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
+  - serverless-esbuild
+
+functions:
+  createTable:
+    name: qldb-wallet-table-${self:provider.stage}
+    handler: functions/qldbTable.handler
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-createTable
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLCreateTable
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    memorySize: 256
+    timeout: 6
+    environment:
+      TABLE_NAME: DanielWallet
+      POWERTOOLS_SERVICE_NAME: createTable
+
+  createWallet:
+    name: create-wallet-${self:provider.stage}
+    handler: functions/createWallet.handler
+    environment:
+      POWERTOOLS_SERVICE_NAME: createWallet
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-createWallet
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLInsert
+          - qldb:PartiQLSelect
+          - qldb:PartiQLUpdate
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    events:
+      - httpApi:
+          path: /wallet
+          method: post
+
+  getBalance:
+    name: get-wallet-${self:provider.stage}
+    handler: functions/getBalance.handler
+    environment:
+      POWERTOOLS_SERVICE_NAME: getBalance
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-getBalance
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLSelect
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    events:
+      - http:
+          path: /wallet/{guid}
+          method: get
+  
+  addFunds:
+    name: add-balance-${self:provider.stage}
+    handler: functions/addFunds.handler
+    environment:
+      POWERTOOLS_SERVICE_NAME: updateWallet
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-updateWallet
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLSelect
+          - qldb:PartiQLUpdate
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    events:
+      - http:
+          path: /wallet/deposit/{guid}
+          method: put
+  
+  withdrawFunds:
+    name: withdraw-balance-${self:provider.stage}
+    handler: functions/withdrawFunds.handler
+    environment:
+      POWERTOOLS_SERVICE_NAME: updateWallet
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-withdrawWallet
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLSelect
+          - qldb:PartiQLUpdate
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    events:
+      - http:
+          path: /wallet/withdraw/{guid}
+          method: put
+  
+  deleteWallet:
+    name: delete-balance-${self:provider.stage}
+    handler: functions/deleteWallet.handler
+    environment:
+      POWERTOOLS_SERVICE_NAME: deleteWallet
+    iamRoleStatementsInherit: true
+    iamRoleStatementsName: qldb-wallet-demo-deleteWallet
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - qldb:PartiQLSelect
+          - qldb:PartiQLDelete
+        Resource: 
+          - "arn:aws:qldb:#{AWS::Region}:#{AWS::AccountId}:ledger/qldb-wallet-demo-${self:provider.stage}/*"
+    events:
+      - http:
+          path: /wallet/{guid}
+          method: delete
+
+  
+
+resources:
+  Resources:
+    qldbLedger:
+      Type: AWS::QLDB::Ledger
+      Properties:
+        Name: qldb-wallet-demo-${self:provider.stage}
+        DeletionProtection: false
+        PermissionsMode: STANDARD
+        Tags:
+          - Key: name
+            Value: qldb-wallet-demo
+
+    qldbTable:
+      Type: Custom::qldbTable
+      DependsOn: qldbLedger
+      Properties:
+        ServiceToken: !GetAtt CreateTableLambdaFunction.Arn
+        Version: 1.0  #change this to force redeploy      
+
+  Outputs:
+    qldbBicycleWalletLedger:
+      Value:
+        Ref: qldbLedger
+      Export:
+        Name: qldb-wallet-demo
