@@ -55,5 +55,3 @@ Delete Wallet is an HTTP DELETE using guid that is inserted in the event paramet
 
 ### Get Licence
 Get Wallet is an HTTP GET using guid that is inserted in the event parameters.
-
-# qldb-simple-wallet
