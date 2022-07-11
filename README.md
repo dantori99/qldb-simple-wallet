@@ -15,7 +15,7 @@ and this will create the CloudFormation stack and deploy all resources
 ## Updates
 
 **Jul-11-2022**
-Fundamental rewrite to a Bicycle Licence application that handles a number of events:
+Fundamental rewrite to a Wallet application that handles a number of events:
 * Create Wallet
 * add Balance
 * withdraw Balance
