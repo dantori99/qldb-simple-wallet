@@ -14,66 +14,46 @@ and this will create the CloudFormation stack and deploy all resources
 
 ## Updates
 
-**Jul-01-2020**
+**Jul-11-2022**
 Fundamental rewrite to a Bicycle Licence application that handles a number of events:
-* Create Licence
-* Update Licence
-* Update Contact
-* Delete Licence
-* Get Licence
+* Create Wallet
+* add Balance
+* withdraw Balance
+* Delete Wallet
+* Get Wallet
 
-### Create Licence
-Create Licence is an HTTP POST using the following JSON
-
-```
-{
-	"firstName" : "firstName",
-	"lastName" : "lastName",
-	"email": "qldb@qldb.com",
-	"telephone" : "01345456",
-	"postcode": "AB12ABC"
-}
-```
-
-### Update Licence
-Update Licence is an HTTP PUT using the following JSON format
+### Create Wallet
+Create Wallet is an HTTP POST using the following JSON
 
 ```
 {
-	"email" : "qldb@qldb.com",
-	"eventInfo": {
-		"eventName": "PenaltyPointsAdded",
-		"eventDescription": "Speeding in a 30 Zone",
-		"penaltyPoints": 3
-	}
+	"email" : "{uptoyou@formatemail:STRING}",
+	"name" : "{uptoyou:STRING}"
 }
 ```
 
-### Update Contact
-Update Contact is an HTTP PUT using the following JSON format. It allows you to update either the Telephone and/or the Postcode of the contact
+### add Balance
+add Balance is an HTTP PUT using the following JSON format
 
 ```
 {
-	"email" : "qldb@qldb.com",
-	"telephone": "01367893",
-	"postcode": "AB12CDE"
-	"eventInfo": {
-		"eventName": "ContactDetailsChanged",
-		"eventDescription": "Telephone number and postcode updated"
-	}
+	"amountToAdd": insertNumber,
 }
 ```
 
-### Delete Licence
-Delete Licence is an HTTP DELETE using the following JSON format
+### withdraw Balance
+withdraw Balance is an HTTP PUT using the following JSON format
 
 ```
 {
-	"licenceId" : "licenceId"
+	"amountToWithdraw": insertNumber,
 }
 ```
+
+### Delete Wallet
+Delete Wallet is an HTTP DELETE using guid that is inserted in the event parameters.
 
 ### Get Licence
-Get Licence is an HTTP GET using the licence ID
+Get Wallet is an HTTP GET using guid that is inserted in the event parameters.
 
 # qldb-simple-wallet
