@@ -8,7 +8,7 @@ const middy = require('@middy/core');
 const { addBalance } = require('./helper/utils');
 const ErrorNotFound = require('./lib/ErrorNotFound');
 
-//  Params fetched from the env vars
+//  Params fetched from the env
 const logger = new Logger();
 const tracer = new Tracer();
 const metrics = new Metrics();
