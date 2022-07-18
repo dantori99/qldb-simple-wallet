@@ -1,0 +1,30 @@
+name: lambda-deployment-with-github-action-test
+
+on: 
+  push:
+    branches:
+    - master # You can use any of your root or master branch name
+  
+jobs:
+  lambda-deploy:
+    runs-on: macos-12
+    steps:
+      - name: Checkout to repo
+        uses: actions/checkout@v2
+
+      - name: Setup node environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+          
+      - name: Install serverless globally
+        run: npm install -g serverless
+      
+      - name: Configure serverless authentication
+        run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Install dependencies
+        run: npm install --save && npm ci
+      
+      - name: Deploy lambda function
+        run: sls deploy --verbose
