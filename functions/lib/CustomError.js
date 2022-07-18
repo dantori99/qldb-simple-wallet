@@ -1,5 +1,5 @@
 /*
- * Custom error when the requested Licence record does not exist
+ * Custom error when the requested Licence record not exist
  */
 class CustomError extends Error {
   constructor(status, message, description) {
