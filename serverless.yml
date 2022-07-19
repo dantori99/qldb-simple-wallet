@@ -6,7 +6,7 @@ provider:
   runtime: nodejs14.x
   memorySize: 512
   stage: ${opt:stage, 'dev'}
-  region: ap-southeast-1
+  region: ap-northeast-1
   lambdaHashingVersion: "20201221"
   tracing:
     apiGateway: true
